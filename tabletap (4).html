@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TableTap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EDF0EA;--ink:#16201B;--mut:#66706A;--card:#fff;--line:#D8DDD4;--go:#1E6B4E;--warn:#E39A0B;--bad:#C23B2B}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 'DM Sans',system-ui,sans-serif}
+h1,h2,h3{font-family:'Bricolage Grotesque','DM Sans',sans-serif;margin:0;letter-spacing:-.01em}
+h1{font-size:30px;font-weight:800}h2{font-size:21px}h3{font-size:17px}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 120px}
+.wide{max-width:1100px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+.mut{color:var(--mut);font-size:14px}.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+input,textarea{width:100%;font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:10px;margin:6px 0;background:#fff}
+textarea{min-height:170px}
+label{font-size:14px;color:var(--mut)}
+.b{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16px;background:var(--ink);color:#fff;cursor:pointer;min-height:44px}
+.b:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.b.go{background:var(--go)}.b.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.b.sm{padding:6px 10px;min-height:32px;font-size:14px}.b:disabled{opacity:.55;cursor:default}
+.b.full{width:100%;margin-top:10px}
+.note{background:#FFF4D6;border:1px solid #F0D88A;border-radius:10px;padding:10px 12px;font-size:14px;margin:12px 0}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0 4px}
+header.top small{color:var(--mut)}
+.call{background:var(--warn);color:#1b1300;white-space:nowrap}.call.on{background:#e8e3d0;color:var(--mut)}
+.cat{margin:20px 0 4px;color:var(--go)}
+.it{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.it b{display:block;font-weight:500}
+.stp{display:flex;align-items:center;gap:10px}.stp i{font-style:normal;min-width:20px;text-align:center;font-weight:700}
+.stp button{width:40px;height:40px;border-radius:50%;border:1px solid var(--go);background:#fff;color:var(--go);font-size:20px;cursor:pointer}
+.ln{display:flex;justify-content:space-between;gap:8px;padding:6px 0;align-items:center}
+.ln em{color:var(--warn);font-size:13px;font-style:normal;font-weight:700}
+.tot{border-top:1px solid var(--line);font-weight:700;margin-top:4px}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:linear-gradient(transparent,var(--bg) 30%)}
+.bar .b{width:100%;max-width:528px;display:block;margin:0 auto;background:var(--go);font-size:17px}
+.ov{position:fixed;inset:0;background:#0008;display:flex;align-items:flex-end;justify-content:center;padding:12px;z-index:9}
+.ov .card{width:100%;max-width:520px;max-height:85vh;overflow:auto}
+.tabs{display:flex;gap:8px;margin:12px 0}.tabs .b{background:#fff;color:var(--ink);border:1px solid var(--line)}.tabs .b.on{background:var(--ink);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.tc{margin:0}.tc.idle{opacity:.6}.tc.ring{border:2px solid var(--warn);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px #E39A0B44}}
+.pill{font-size:12px;font-weight:700;background:var(--bg);border-radius:99px;padding:3px 10px}
+.alert{background:#FFF4D6;border-radius:10px;padding:8px 10px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:6px;font-weight:700}
+.req{background:#FDECEA;border-radius:10px;padding:8px 10px;margin:8px 0;font-size:14px}.req .row{justify-content:flex-start;margin-top:6px}
+.qrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.qc{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;break-inside:avoid}
+.qc>div{display:flex;justify-content:center;margin-bottom:8px}.qc b{font-family:'Bricolage Grotesque',sans-serif;font-size:22px}
+.brand{font-size:38px}
+@media print{.np{display:none!important}body{background:#fff}.wrap{padding:0;max-width:none}}
+@media (prefers-reduced-motion:reduce){.tc.ring{animation:none}}
+</style></head>
+<body><div id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ===== SETUP: paste your Supabase project URL and anon key to go live. Leave empty for single-browser demo mode. ===== */
+const SUPA_URL="https://gruckkxncsfywivdavly.supabase.co", SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdydWNra3huY3NmeXdpdmRhdmx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MDg4MTUsImV4cCI6MjEwNzk4NDgxNX0.I5mLtKqasSw9zyWyJ80CTinA-W4E1zD3DK-4w1pqNa4";
+
+const $=(s,r=document)=>r.querySelector(s), app=$('#app');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,8);
+const rs=n=>'₹'+(+n).toLocaleString('en-IN');
+const blank=()=>({sid:'0',items:[],reqs:[],call:0});
+const msg=(h,p)=>`<div class=wrap><div class=card><h2>${h}</h2><p class=mut>${p}</p></div></div>`;
+const P=new URLSearchParams(location.search), BASE=location.href.split('?')[0].split('#')[0];
+const acts={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&acts[b.dataset.a])acts[b.dataset.a](b.dataset,b)});
+
+/* ===== data layer: one table "kv" (k, venue, v). Swappable: Supabase or localStorage demo ===== */
+const sb=(SUPA_URL&&SUPA_KEY&&window.supabase)?supabase.createClient(SUPA_URL,SUPA_KEY):null;
+const DB={demo:!sb,
+ async get(k){
+  if(sb){const {data,error}=await sb.from('kv').select('v').eq('k',k).maybeSingle();if(error)throw error;return data?data.v:null}
+  const s=localStorage.getItem('tt:'+k);return s?JSON.parse(s):null},
+ async set(k,venue,v){
+  if(sb){const {error}=await sb.from('kv').upsert({k,venue,v});if(error)throw error;return}
+  localStorage.setItem('tt:'+k,JSON.stringify(v))},
+ async list(venue){
+  if(sb){const {data,error}=await sb.from('kv').select('k,v').eq('venue',venue).like('k','tbl:%');if(error)throw error;return data||[]}
+  const o=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('tt:tbl:'+venue+':'))o.push({k:k.slice(3),v:JSON.parse(localStorage.getItem(k))})}return o},
+ async user(){if(!sb)return localStorage.getItem('ttmaster')==='1';const {data}=await sb.auth.getSession();return !!data.session},
+ async signIn(e,p){const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error)throw error},
+ async signOut(){if(sb)await sb.auth.signOut();else localStorage.removeItem('ttmaster')},
+ async savePin(id,pin){if(sb){const {error}=await sb.from('pins').upsert({venue:id,pin});if(error)throw error}else localStorage.setItem('tt:pin:'+id,pin)},
+ async ownerVenue(c){
+  if(sb){const {data,error}=await sb.rpc('owner_venue',{c});if(error)throw error;return data||null}
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('tt:pin:')&&localStorage.getItem(k).toLowerCase()===c.toLowerCase())return k.slice(7)}return null},
+ async codes(){
+  const m={};
+  if(sb){const {data,error}=await sb.from('pins').select('venue,pin');if(error)throw error;(data||[]).forEach(r=>m[r.venue]=r.pin);return m}
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('tt:pin:'))m[k.slice(7)]=localStorage.getItem(k)}return m},
+ async venues(){
+  if(sb){const {data,error}=await sb.from('kv').select('v').like('k','venue:%');if(error)throw error;return (data||[]).map(r=>r.v)}
+  const o=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('tt:venue:'))o.push(JSON.parse(localStorage.getItem(k)))}return o},
+ async remove(id){
+  if(sb){await sb.from('kv').delete().eq('venue',id);await sb.from('pins').delete().eq('venue',id);return}
+  const ks=[];for(let i=0;i<localStorage.length;i++)ks.push(localStorage.key(i));
+  ks.filter(k=>k.startsWith('tt:tbl:'+id+':')||k==='tt:venue:'+id||k==='tt:pin:'+id).forEach(k=>localStorage.removeItem(k))},
+ watch(venue,cb){
+  if(sb)sb.channel('v'+venue+uid()).on('postgres_changes',{event:'*',schema:'public',table:'kv',filter:'venue=eq.'+venue},cb).subscribe();
+  else addEventListener('storage',cb)}
+};
+
+/* ===== menu text <-> list.  Lines: "# Category" then "Item name - 120" ===== */
+function parseMenu(t){let c='',o=[];for(const l of t.split(/\r?\n/)){const x=l.trim();if(!x)continue;
+ if(x[0]==='#'){c=x.replace(/^#+\s*/,'');continue}
+ const m=x.match(/^(.+?)[\s,;:|\-–—]+(?:₹|Rs\.?\s*)?(\d+(?:\.\d+)?)\s*$/);
+ if(m)o.push({c,n:m[1].trim().replace(/[,;:|]+$/,''),p:+m[2]})}return o}
+const menuText=m=>{let c=null,o=[];m.forEach(x=>{if(x.c!==c){c=x.c;if(c)o.push('# '+c)}o.push(x.n+' - '+x.p)});return o.join('\n')};
+
+/* ===================== CUSTOMER (scan QR: ?v=VENUE&t=TABLE) ===================== */
+async function customer(vid,t){
+ let v=await DB.get('venue:'+vid);
+ if(!v||!(t>=1&&t<=v.tables)){app.innerHTML=msg('This QR code isn’t valid','Please ask a staff member for help.');return}
+ const key=`tbl:${vid}:${t}`;
+ let st=(await DB.get(key))||blank(),cart={},ed=null;
+ const mut=async fn=>{try{const s=(await DB.get(key))||blank();fn(s);await DB.set(key,vid,s);st=s;draw()}catch(e){alert('Ordering is unavailable right now. Please ask a staff member for help.')}};
+ function draw(){
+  if(v.active===false){app.innerHTML=msg('Ordering is paused','Please ask a staff member to take your order.');return}
+  const pt=st.items.reduce((a,i)=>a+i.p*i.q,0);
+  const cn=Object.values(cart).reduce((a,b)=>a+b,0), ct=v.menu.reduce((a,m,i)=>a+m.p*(cart[i]||0),0);
+  let last=null,menu='';
+  v.menu.forEach((m,i)=>{if(m.c!==last){if(m.c)menu+=`<h3 class=cat>${esc(m.c)}</h3>`;last=m.c}
+   const q=cart[i]||0;
+   menu+=`<div class=it><div><b>${esc(m.n)}</b><span class=mut>${rs(m.p)}</span></div><div class=stp>${q?`<button aria-label="Less" data-a=dec data-i=${i}>−</button><i>${q}</i>`:''}<button aria-label="More" data-a=inc data-i=${i}>+</button></div></div>`});
+  const reqOf=id=>st.reqs.find(r=>r.iid===id);
+  const placed=st.items.length?`<div class=card><h3>Your order</h3>${st.items.map(i=>`<div class=ln><span>${i.q} × ${esc(i.n)} ${reqOf(i.id)?'<em>change requested</em>':''}</span><span>${rs(i.p*i.q)}</span></div>`).join('')}<div class="ln tot"><span>Total so far</span><span>${rs(pt)}</span></div><button class="b ghost full" data-a=edit>Edit order</button></div>`:'';
+  const modal=ed?`<div class=ov><div class=card><h3>Edit order</h3><p class=mut>Staff will review your request. Set an item to 0 to ask for cancellation.</p>${st.items.map(i=>`<div class=it><div><b>${esc(i.n)}</b><span class=mut>ordered ${i.q}</span></div><div class=stp><button data-a=edm data-id=${i.id}>−</button><i>${ed[i.id]}</i><button data-a=edp data-id=${i.id}>+</button></div></div>`).join('')}<div class=row style="margin-top:12px"><button class="b ghost" data-a=edx>Close</button><button class="b go" data-a=eds>Send request</button></div></div></div>`:'';
+  app.innerHTML=`<div class=wrap><header class=top><div><small>${esc(v.name)}</small><h1>Table ${t}</h1></div><button class="b call${st.call?' on':''}" data-a=call ${st.call?'disabled':''}>🛎️ ${st.call?'Waiter is coming':'Call waiter'}</button></header>${placed}${menu}${cn?`<div class=bar><button class=b data-a=place>Place order · ${cn} item${cn>1?'s':''} · ${rs(ct)}</button></div>`:''}${modal}</div>`}
+ Object.assign(acts,{
+  inc:d=>{cart[d.i]=(cart[d.i]||0)+1;draw()},
+  dec:d=>{cart[d.i]=Math.max(0,(cart[d.i]||0)-1);draw()},
+  place:()=>{if(!confirm('Place this order? Once placed it can’t be cancelled — you can only send an edit request to staff.'))return;
+   const items=Object.entries(cart).filter(([,q])=>q>0).map(([i,q])=>({id:uid(),n:v.menu[i].n,p:v.menu[i].p,q,at:Date.now()}));
+   cart={};mut(s=>{s.items.push(...items)})},
+  call:()=>mut(s=>{s.call=Date.now()}),
+  edit:()=>{ed={};st.items.forEach(i=>ed[i.id]=i.q);draw()},
+  edm:d=>{ed[d.id]=Math.max(0,ed[d.id]-1);draw()},
+  edp:d=>{const o=st.items.find(i=>i.id===d.id);ed[d.id]=Math.min(o.q,ed[d.id]+1);draw()},
+  edx:()=>{ed=null;draw()},
+  eds:()=>{const e=ed,ch=st.items.filter(i=>e[i.id]!==i.q);ed=null;if(!ch.length){draw();return}
+   mut(s=>{ch.forEach(i=>{s.reqs=s.reqs.filter(r=>r.iid!==i.id);s.reqs.push({id:uid(),iid:i.id,n:i.n,from:i.q,q:e[i.id]})})})}
+ });
+ DB.watch(vid,async()=>{v=(await DB.get('venue:'+vid))||v;const s=(await DB.get(key))||blank();if(s.sid!==st.sid){cart={};ed=null}st=s;if(!ed)draw()});
+ draw();
+}
+
+/* ===================== OWNER / ADMIN ===================== */
+let ac;const beep=()=>{try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.setValueAtTime(.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.4);o.start();o.stop(ac.currentTime+.4)}catch(e){}};
+
+function form(v){return `<label>Venue name</label><input id=fn value="${v?esc(v.name):''}" placeholder="Cafe Monsoon">
+<label>Number of tables</label><input id=ft type=number min=1 max=200 value="${v?v.tables:''}" placeholder="12">
+<label>Owner access ID — you choose it (8+ letters or numbers). The owner types this to see their venue.${v?' Leave blank to keep the current one.':''}</label><div class=row><input id=fp autocomplete=off placeholder="e.g. MONSOON7K2P"><button type=button class="b ghost sm" data-a=gen>Generate</button></div>
+<label>Menu — one item per line as “Name - price”. Start a line with # for a category.</label>
+<textarea id=fm placeholder="# Starters&#10;Paneer Tikka - 220&#10;# Drinks&#10;Cold Coffee - 120">${v?esc(menuText(v.menu)):''}</textarea>
+<label>Or load a .txt / .csv file in the same format</label><input type=file accept=".txt,.csv" onchange="this.files[0]&&this.files[0].text().then(t=>$('#fm').value=t)">
+<button class="b go full" data-a=save data-id="${v?v.id:''}">Save venue</button>`}
+
+acts.save=async d=>{
+ const name=$('#fn').value.trim(),tables=Math.floor(+$('#ft').value),code=$('#fp').value.trim(),menu=parseMenu($('#fm').value);
+ const okCode=c=>/^[A-Za-z0-9-]{8,40}$/.test(c);
+ if(!name||!(tables>0&&tables<=200)||!menu.length||(!d.id&&!okCode(code))||(code&&!okCode(code))){alert('Add a venue name, 1–200 tables, at least one menu line like “Tea - 40”, and an owner access ID of 8+ letters or numbers (Generate makes one).');return}
+ const id=d.id||uid();
+ try{
+  if(code){const ex=await DB.ownerVenue(code);if(ex&&ex!==id){alert('That access ID is already used by another venue. Pick a different one.');return}}
+  const old=d.id?await DB.get('venue:'+id):null;
+  await DB.set('venue:'+id,id,{id,name,tables,menu,active:old?old.active!==false:true});
+  if(code)await DB.savePin(id,code)}catch(e){alert('Could not save: '+e.message);return}
+ location.href=BASE};
+acts.gen=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';$('#fp').value=Array.from(crypto.getRandomValues(new Uint32Array(10)),n=>a[n%32]).join('')};
+acts.enter=()=>{const c=$('#oc').value.trim();if(!c)return;localStorage.setItem('ttown',c);location.href=BASE};
+acts.oout=()=>{localStorage.removeItem('ttown');location.href=BASE};
+acts.msign=async()=>{try{if(DB.demo)localStorage.setItem('ttmaster','1');else await DB.signIn($('#me').value.trim(),$('#mp').value);location.href=BASE}catch(e){alert('Sign-in failed: '+e.message)}};
+acts.msout=async()=>{await DB.signOut();location.href=BASE};
+acts.copy=d=>{navigator.clipboard.writeText(BASE+'?id='+d.id).then(()=>alert('Owner link copied. Sending it signs the owner straight in, so share it only with them.'))};
+acts.susp=async d=>{const x=await DB.get('venue:'+d.id);x.active=(x.active===false);await DB.set('venue:'+d.id,d.id,x);master()};
+acts.del=async d=>{if(confirm('Delete this venue and all its data? This cannot be undone.')){await DB.remove(d.id);master()}};
+
+async function master(){
+ if(!(await DB.user())){app.innerHTML=`<div class=wrap><h1 class=brand>TableTap</h1><div class=card><h2>Master sign in</h2>${DB.demo?'<p class=mut>Demo mode has no password. This only marks this browser as yours.</p>':'<input id=me type=email placeholder=Email autocomplete=username><input id=mp type=password placeholder=Password autocomplete=current-password>'}<button class="b go full" data-a=msign>${DB.demo?'Continue':'Sign in'}</button></div></div>`;return}
+ const vs=await DB.venues(),codes=await DB.codes();
+ const list=vs.length?vs.map(x=>`<div class=card><div class=row><div><h3>${esc(x.name)}</h3><span class=mut>${x.tables} tables · ${x.menu.length} items · Access ID: <b>${esc(codes[x.id]||'not set')}</b></span></div><span class=pill>${x.active===false?'Suspended':'Active'}</span></div><div class=row style="justify-content:flex-start;flex-wrap:wrap;margin-top:10px"><a class="b sm" style="text-decoration:none;display:inline-flex;align-items:center" href="?admin=${x.id}&m=1">Open</a>${codes[x.id]?`<button class="b sm ghost" data-a=copy data-id="${esc(codes[x.id])}">Copy owner link</button>`:''}<button class="b sm ${x.active===false?'go':'ghost'}" data-a=susp data-id=${x.id}>${x.active===false?'Reactivate':'Suspend'}</button><button class="b sm ghost" data-a=del data-id=${x.id}>Delete</button></div></div>`).join(''):'<p class=mut>No venues yet. Add your first one below.</p>';
+ app.innerHTML=`<div class=wrap><header class=top><div><small>Master panel</small><h1>TableTap</h1></div><button class="b ghost sm" data-a=msout>Sign out</button></header>
+ ${DB.demo?'<div class=note>Demo mode: data is saved only in this browser. Add your Supabase URL and key at the top of this file to go live.</div>':''}
+ ${location.protocol==='file:'?'<div class=note>This file is opened from your computer. QR codes only work for customers once the file is hosted online.</div>':''}
+ <h2 style="margin-top:16px">Your venues</h2>${list}
+ <div class=card><h2>New venue</h2>${form()}</div></div>`}
+
+async function dash(v,master){
+ let tab='live',rows=await DB.list(v.id),prev=-1;
+ const load=async()=>{rows=await DB.list(v.id)};
+ const count=()=>rows.reduce((a,r)=>a+r.v.items.length+r.v.reqs.length+(r.v.call?1:0),0);
+ const mt=async(t,fn)=>{const k=`tbl:${v.id}:${t}`;const s=(await DB.get(k))||blank();fn(s);await DB.set(k,v.id,s);await load();render()};
+ function live(){
+  const m={};rows.forEach(r=>m[r.k.split(':')[2]]=r.v);let o='';
+  for(let t=1;t<=v.tables;t++){const s=m[t]||blank(),tot=s.items.reduce((a,i)=>a+i.p*i.q,0),act=s.items.length||s.call;
+   o+=`<div class="card tc${s.call?' ring':''}${act?'':' idle'}"><div class=row><h3>Table ${t}</h3><span class=pill>${s.items.length?'Occupied':s.call?'Needs help':'Free'}</span></div>`;
+   if(s.call)o+=`<div class=alert><span>🛎️ Waiter called</span><button class="b sm" data-a=att data-t=${t}>Attended</button></div>`;
+   s.reqs.forEach(r=>o+=`<div class=req><b>Edit request:</b> ${esc(r.n)} ${r.from} → ${r.q===0?'cancel':r.q}<div class=row><button class="b sm go" data-a=ok data-t=${t} data-id=${r.id}>Approve</button><button class="b sm ghost" data-a=no data-t=${t} data-id=${r.id}>Reject</button></div></div>`);
+   s.items.forEach(i=>o+=`<div class=ln><span>${i.q} × ${esc(i.n)}</span><span>${rs(i.p*i.q)} <button class="b sm ghost" aria-label="One less" data-a=minus data-t=${t} data-id=${i.id}>−</button> <button class="b sm ghost" aria-label="Remove item" data-a=rm data-t=${t} data-id=${i.id}>✕</button></span></div>`);
+   if(act)o+=`<div class="ln tot"><span>Total</span><span>${rs(tot)}</span></div><button class="b go full" data-a=done data-t=${t}>Complete order</button>`;
+   o+='</div>'}
+  return `<div class=grid>${o}</div>`}
+ function render(){
+  const n=count();if(prev>=0&&n>prev)beep();prev=n;
+  const body=tab==='live'?live():tab==='qr'?`<div class="row np" style="margin-bottom:12px"><p class=mut>Print, cut, and stick one on each table.</p><button class="b" onclick="print()">Print QR codes</button></div><div class=qrs>${Array.from({length:v.tables},(_,i)=>`<div class=qc><div id=q${i+1}></div><b>Table ${i+1}</b><a class=np style="display:block;font-size:13px;margin-top:6px" href="${BASE}?v=${v.id}&t=${i+1}" target="_blank">Open this table</a></div>`).join('')}</div>`
+   :`<div class=card><h3>Owner access</h3><p class=mut>The owner opens ${esc(BASE)} and types their access ID. You can see every venue’s access ID on the master panel.</p></div><div class=card><h2>Edit venue</h2>${form(v)}</div>`;
+  app.innerHTML=`<div class="wrap wide"><header class="top np"><div><small>${master?'<a href="'+BASE+'">← Master panel</a>':'Dashboard'}</small><h1>${esc(v.name)}</h1></div>${master?'':'<button class="b ghost sm" data-a=oout>Sign out</button>'}</header><div class="tabs np"><button class="b${tab==='live'?' on':''}" data-a=tab data-x=live>Live orders</button><button class="b${tab==='qr'?' on':''}" data-a=tab data-x=qr>QR codes</button>${master?`<button class="b${tab==='set'?' on':''}" data-a=tab data-x=set>Menu & settings</button>`:''}</div>${body}</div>`;
+  if(tab==='qr')for(let i=1;i<=v.tables;i++)new QRCode($('#q'+i),{text:`${BASE}?v=${v.id}&t=${i}`,width:150,height:150})}
+ Object.assign(acts,{
+  tab:d=>{tab=d.x;render()},
+  att:d=>mt(d.t,s=>{s.call=0}),
+  no:d=>mt(d.t,s=>{s.reqs=s.reqs.filter(r=>r.id!==d.id)}),
+  ok:d=>mt(d.t,s=>{const r=s.reqs.find(x=>x.id===d.id);if(!r)return;if(r.q===0)s.items=s.items.filter(i=>i.id!==r.iid);else{const i=s.items.find(i=>i.id===r.iid);if(i)i.q=r.q}s.reqs=s.reqs.filter(x=>x.id!==d.id)}),
+  minus:d=>mt(d.t,s=>{const i=s.items.find(i=>i.id===d.id);if(!i)return;i.q--;if(i.q<1){s.items=s.items.filter(x=>x.id!==d.id);s.reqs=s.reqs.filter(r=>r.iid!==d.id)}}),
+  rm:d=>mt(d.t,s=>{s.items=s.items.filter(i=>i.id!==d.id);s.reqs=s.reqs.filter(r=>r.iid!==d.id)}),
+  done:d=>{if(confirm(`Complete Table ${d.t}? This clears the table for the next customer.`))mt(d.t,s=>{Object.assign(s,{sid:uid(),items:[],reqs:[],call:0})})}
+ });
+ DB.watch(v.id,async()=>{await load();if(tab==='live')render()});
+ render();
+}
+
+/* ===================== ROUTER ===================== */
+(async()=>{
+ try{
+  const vid=P.get('v');if(vid)return await customer(vid,+P.get('t'));
+  if(P.has('master'))return await master();
+  if(!P.get('id')&&!P.get('admin')&&await DB.user())return await master();
+  const a=P.get('admin');
+  if(a&&P.get('m')){
+   if(!(await DB.user())){location.href=BASE;return}
+   const v=await DB.get('venue:'+a);
+   if(!v){app.innerHTML=msg('Venue not found','Go back to the master panel.');return}
+   return await dash(v,true)}
+  if(P.get('id')){localStorage.setItem('ttown',P.get('id'));history.replaceState(null,'',BASE)}
+  let bad='';const code=localStorage.getItem('ttown');
+  if(code){
+   const id=await DB.ownerVenue(code),v=id&&await DB.get('venue:'+id);
+   if(v){
+    if(v.active===false){app.innerHTML=msg('Service paused','This venue’s TableTap service is paused. Please contact your TableTap provider.');return}
+    return await dash(v,false)}
+   localStorage.removeItem('ttown');bad='We couldn’t find that ID. Check it and try again.'}
+  app.innerHTML=`<div class=wrap><h1 class=brand>TableTap</h1><p class=mut>Enter the ID you were given to see your venue.</p>${bad?`<div class=note>${bad}</div>`:''}<div class=card><label>Your ID</label><input id=oc autocomplete=off><button class="b go full" data-a=enter>Open</button></div></div>`;
+ }catch(e){app.innerHTML=msg('Connection problem',esc(e.message||e))}
+})();
+</script></body></html>
